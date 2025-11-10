@@ -1,48 +1,62 @@
 """
-Database Schemas
+Database Schemas for Interview Builder
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a collection in MongoDB.
+Collection name is the lowercase of the class name.
 """
-
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import List, Optional
+from datetime import datetime
 
-# Example schemas (replace with your own):
 
-class User(BaseModel):
+class Question(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Questions candidates can be asked during interviews
+    Collection: "question"
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    text: str = Field(..., description="The question text")
+    category: Optional[str] = Field(None, description="Topic area, e.g., Algorithms, System Design")
+    difficulty: Optional[str] = Field(None, description="e.g., Easy, Medium, Hard")
+    role: Optional[str] = Field(None, description="Target role, e.g., Backend, Frontend, Data")
+    type: Optional[str] = Field(None, description="e.g., Behavioral, Coding, System Design")
+    expected_answer: Optional[str] = Field(None, description="Guidance for interviewer on what to expect")
+    tags: List[str] = Field(default_factory=list, description="Searchable tags")
 
-class Product(BaseModel):
+
+class InterviewTemplate(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Interview templates contain structure and a set of question IDs
+    Collection: "interviewtemplate"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    title: str = Field(..., description="Template name, e.g., Frontend Senior Loop")
+    role: Optional[str] = Field(None, description="Primary role this template targets")
+    seniority: Optional[str] = Field(None, description="e.g., Junior, Mid, Senior, Staff")
+    description: Optional[str] = Field(None, description="Notes for interviewers")
+    question_ids: List[str] = Field(default_factory=list, description="Associated question IDs (as strings)")
 
-# Add your own schemas here:
-# --------------------------------------------------
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Candidate(BaseModel):
+    """
+    Candidate information
+    Collection: "candidate"
+    """
+    name: str
+    email: str
+    role_applied: Optional[str] = None
+
+
+class Interview(BaseModel):
+    """
+    An actual scheduled interview for a candidate
+    Collection: "interview"
+    """
+    candidate_name: str
+    candidate_email: str
+    role: Optional[str] = None
+    template_id: Optional[str] = Field(None, description="Linked template ID if used")
+    question_ids: List[str] = Field(default_factory=list)
+    scheduled_at: Optional[datetime] = Field(None, description="ISO timestamp for scheduled time")
+    mode: Optional[str] = Field(None, description="e.g., Onsite, Remote, Phone Screen")
+    notes: Optional[str] = None
+
+# Add additional collections as needed (e.g., feedback, scorecards) by following the same pattern.
